@@ -1,0 +1,19 @@
+<mat-toolbar color="primary" class="app-toolbar">
+  <mat-icon class="brand-icon">event_available</mat-icon>
+  <span class="brand">Conference Schedule Optimizer</span>
+  <span class="spacer"></span>
+  <nav class="nav-links">
+    <a mat-button routerLink="/schedule" routerLinkActive="active-link">
+      <mat-icon>calendar_view_week</mat-icon>
+      Schedule
+    </a>
+    <a mat-button routerLink="/presets" routerLinkActive="active-link">
+      <mat-icon>tune</mat-icon>
+      Presets
+    </a>
+  </nav>
+</mat-toolbar>
+
+<main class="app-content">
+  <router-outlet />
+</main>
