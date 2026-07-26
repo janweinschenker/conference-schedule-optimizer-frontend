@@ -73,6 +73,7 @@ export class Presets implements OnInit {
     'title',
     'speaker',
     'duration',
+    'favorites',
     'beamer',
     'flipchart',
     'actions',
@@ -196,6 +197,7 @@ export class Presets implements OnInit {
       title: ['', [Validators.required, Validators.minLength(1)]],
       speaker: [''],
       durationMinutes: [null, [Validators.min(0)]],
+      favorites: [null, [Validators.min(0)]],
       beamerRequired: [false],
       flipchartRequired: [false],
     });
@@ -230,6 +232,7 @@ export class Presets implements OnInit {
       title: row.title,
       speaker: row.speaker ?? '',
       durationMinutes: row.durationMinutes ?? null,
+      favorites: row.favorites ?? null,
       beamerRequired: row.beamerRequired ?? false,
       flipchartRequired: row.flipchartRequired ?? false,
     });

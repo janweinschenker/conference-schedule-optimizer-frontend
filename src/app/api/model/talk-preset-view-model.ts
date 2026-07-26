@@ -16,6 +16,7 @@ export interface TalkPresetViewModel {
     durationMinutes?: number;
     beamerRequired?: boolean;
     flipchartRequired?: boolean;
+    favorites?: number;
     /**
      * Creation timestamp (ISO-8601), read-only
      */

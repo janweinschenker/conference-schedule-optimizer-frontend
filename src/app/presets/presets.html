@@ -233,6 +233,23 @@
           </td>
         </ng-container>
 
+        <!-- Favorites -->
+        <ng-container matColumnDef="favorites">
+          <th mat-header-cell *matHeaderCellDef>Favorites</th>
+          <td mat-cell *matCellDef="let row">
+            @if (isEditingTalk(row)) {
+              <input
+                class="cell-input cell-input--num"
+                type="number"
+                min="0"
+                [formControl]="$any(talkForm.get('favorites'))"
+              />
+            } @else {
+              {{ row.favorites != null ? row.favorites : '—' }}
+            }
+          </td>
+        </ng-container>
+
         <!-- Beamer -->
         <ng-container matColumnDef="beamer">
           <th mat-header-cell *matHeaderCellDef>Beamer</th>

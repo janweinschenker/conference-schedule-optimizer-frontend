@@ -15,5 +15,6 @@ export interface TalkPresetRequest {
     durationMinutes?: number;
     beamerRequired?: boolean;
     flipchartRequired?: boolean;
+    favorites?: number;
 }
 
