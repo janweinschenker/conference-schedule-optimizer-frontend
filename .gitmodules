@@ -1,0 +1,3 @@
+[submodule "openapi"]
+	path = openapi
+	url = https://github.com/u471802_lhgroup/conference-schedule-optimizer-api.git
