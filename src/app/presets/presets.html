@@ -1,0 +1,316 @@
+<div class="presets-page">
+  <!-- ================= Timeslot presets ================= -->
+  <mat-card appearance="outlined" class="preset-card">
+    <mat-card-header class="card-header">
+      <mat-card-title>Timeslot presets</mat-card-title>
+      <span class="header-spacer"></span>
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="addTimeslot()"
+        [disabled]="editingTimeslotId() !== null"
+      >
+        <mat-icon>add</mat-icon>
+        Add timeslot
+      </button>
+    </mat-card-header>
+
+    @if (timeslotLoading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    <mat-card-content>
+      <table mat-table [dataSource]="timeslotRows()" class="preset-table">
+        <!-- Room -->
+        <ng-container matColumnDef="room">
+          <th mat-header-cell *matHeaderCellDef>Room</th>
+          <td mat-cell *matCellDef="let row">
+            @if (isEditingTimeslot(row)) {
+              <input
+                class="cell-input"
+                type="text"
+                placeholder="Room name"
+                [formControl]="$any(timeslotForm.get('room'))"
+              />
+            } @else {
+              {{ row.room }}
+            }
+          </td>
+        </ng-container>
+
+        <!-- Start -->
+        <ng-container matColumnDef="start">
+          <th mat-header-cell *matHeaderCellDef>Start</th>
+          <td mat-cell *matCellDef="let row">
+            @if (isEditingTimeslot(row)) {
+              <input class="cell-input" type="time" [formControl]="$any(timeslotForm.get('start'))" />
+            } @else {
+              {{ row.start || '—' }}
+            }
+          </td>
+        </ng-container>
+
+        <!-- End -->
+        <ng-container matColumnDef="end">
+          <th mat-header-cell *matHeaderCellDef>End</th>
+          <td mat-cell *matCellDef="let row">
+            @if (isEditingTimeslot(row)) {
+              <input class="cell-input" type="time" [formControl]="$any(timeslotForm.get('end'))" />
+            } @else {
+              {{ row.end || '—' }}
+            }
+          </td>
+        </ng-container>
+
+        <!-- Seats -->
+        <ng-container matColumnDef="seats">
+          <th mat-header-cell *matHeaderCellDef>Seats</th>
+          <td mat-cell *matCellDef="let row">
+            @if (isEditingTimeslot(row)) {
+              <input
+                class="cell-input cell-input--num"
+                type="number"
+                min="0"
+                [formControl]="$any(timeslotForm.get('seats'))"
+              />
+            } @else {
+              {{ row.seats }}
+            }
+          </td>
+        </ng-container>
+
+        <!-- Beamer -->
+        <ng-container matColumnDef="beamer">
+          <th mat-header-cell *matHeaderCellDef>Beamer</th>
+          <td mat-cell *matCellDef="let row">
+            @if (isEditingTimeslot(row)) {
+              <mat-checkbox [formControl]="$any(timeslotForm.get('beamerAvailable'))" />
+            } @else {
+              <mat-icon class="bool-icon" [class.on]="row.beamerAvailable">
+                {{ row.beamerAvailable ? 'check_circle' : 'remove' }}
+              </mat-icon>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Flipchart -->
+        <ng-container matColumnDef="flipchart">
+          <th mat-header-cell *matHeaderCellDef>Flipchart</th>
+          <td mat-cell *matCellDef="let row">
+            @if (isEditingTimeslot(row)) {
+              <mat-checkbox [formControl]="$any(timeslotForm.get('flipchartAvailable'))" />
+            } @else {
+              <mat-icon class="bool-icon" [class.on]="row.flipchartAvailable">
+                {{ row.flipchartAvailable ? 'check_circle' : 'remove' }}
+              </mat-icon>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Actions -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="actions-col">Actions</th>
+          <td mat-cell *matCellDef="let row" class="actions-col">
+            @if (isEditingTimeslot(row)) {
+              <button
+                mat-icon-button
+                color="primary"
+                matTooltip="Save"
+                (click)="saveTimeslot()"
+                [disabled]="timeslotForm.invalid"
+              >
+                <mat-icon>check</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Cancel" (click)="cancelTimeslot()">
+                <mat-icon>close</mat-icon>
+              </button>
+            } @else {
+              <button
+                mat-icon-button
+                matTooltip="Edit"
+                (click)="editTimeslot(row)"
+                [disabled]="editingTimeslotId() !== null"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                color="warn"
+                matTooltip="Delete"
+                (click)="deleteTimeslot(row)"
+                [disabled]="editingTimeslotId() !== null"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="timeslotColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: timeslotColumns"
+          [class.editing-row]="isEditingTimeslot(row)"
+        ></tr>
+      </table>
+
+      @if (timeslotRows().length === 0 && !timeslotLoading()) {
+        <p class="empty-hint">No timeslot presets yet. Add one to get started.</p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- ================= Talk presets ================= -->
+  <mat-card appearance="outlined" class="preset-card">
+    <mat-card-header class="card-header">
+      <mat-card-title>Talk presets</mat-card-title>
+      <span class="header-spacer"></span>
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="addTalk()"
+        [disabled]="editingTalkId() !== null"
+      >
+        <mat-icon>add</mat-icon>
+        Add talk
+      </button>
+    </mat-card-header>
+
+    @if (talkLoading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    <mat-card-content>
+      <table mat-table [dataSource]="talkRows()" class="preset-table">
+        <!-- Title -->
+        <ng-container matColumnDef="title">
+          <th mat-header-cell *matHeaderCellDef>Title</th>
+          <td mat-cell *matCellDef="let row">
+            @if (isEditingTalk(row)) {
+              <input
+                class="cell-input"
+                type="text"
+                placeholder="Talk title"
+                [formControl]="$any(talkForm.get('title'))"
+              />
+            } @else {
+              {{ row.title }}
+            }
+          </td>
+        </ng-container>
+
+        <!-- Speaker -->
+        <ng-container matColumnDef="speaker">
+          <th mat-header-cell *matHeaderCellDef>Speaker</th>
+          <td mat-cell *matCellDef="let row">
+            @if (isEditingTalk(row)) {
+              <input
+                class="cell-input"
+                type="text"
+                placeholder="Speaker"
+                [formControl]="$any(talkForm.get('speaker'))"
+              />
+            } @else {
+              {{ row.speaker || '—' }}
+            }
+          </td>
+        </ng-container>
+
+        <!-- Duration -->
+        <ng-container matColumnDef="duration">
+          <th mat-header-cell *matHeaderCellDef>Duration (min)</th>
+          <td mat-cell *matCellDef="let row">
+            @if (isEditingTalk(row)) {
+              <input
+                class="cell-input cell-input--num"
+                type="number"
+                min="0"
+                [formControl]="$any(talkForm.get('durationMinutes'))"
+              />
+            } @else {
+              {{ row.durationMinutes != null ? row.durationMinutes + ' min' : '—' }}
+            }
+          </td>
+        </ng-container>
+
+        <!-- Beamer -->
+        <ng-container matColumnDef="beamer">
+          <th mat-header-cell *matHeaderCellDef>Beamer</th>
+          <td mat-cell *matCellDef="let row">
+            @if (isEditingTalk(row)) {
+              <mat-checkbox [formControl]="$any(talkForm.get('beamerRequired'))" />
+            } @else {
+              <mat-icon class="bool-icon" [class.on]="row.beamerRequired">
+                {{ row.beamerRequired ? 'check_circle' : 'remove' }}
+              </mat-icon>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Flipchart -->
+        <ng-container matColumnDef="flipchart">
+          <th mat-header-cell *matHeaderCellDef>Flipchart</th>
+          <td mat-cell *matCellDef="let row">
+            @if (isEditingTalk(row)) {
+              <mat-checkbox [formControl]="$any(talkForm.get('flipchartRequired'))" />
+            } @else {
+              <mat-icon class="bool-icon" [class.on]="row.flipchartRequired">
+                {{ row.flipchartRequired ? 'check_circle' : 'remove' }}
+              </mat-icon>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Actions -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="actions-col">Actions</th>
+          <td mat-cell *matCellDef="let row" class="actions-col">
+            @if (isEditingTalk(row)) {
+              <button
+                mat-icon-button
+                color="primary"
+                matTooltip="Save"
+                (click)="saveTalk()"
+                [disabled]="talkForm.invalid"
+              >
+                <mat-icon>check</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Cancel" (click)="cancelTalk()">
+                <mat-icon>close</mat-icon>
+              </button>
+            } @else {
+              <button
+                mat-icon-button
+                matTooltip="Edit"
+                (click)="editTalk(row)"
+                [disabled]="editingTalkId() !== null"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                color="warn"
+                matTooltip="Delete"
+                (click)="deleteTalk(row)"
+                [disabled]="editingTalkId() !== null"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="talkColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: talkColumns"
+          [class.editing-row]="isEditingTalk(row)"
+        ></tr>
+      </table>
+
+      @if (talkRows().length === 0 && !talkLoading()) {
+        <p class="empty-hint">No talk presets yet. Add one to get started.</p>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

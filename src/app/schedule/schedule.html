@@ -1,0 +1,258 @@
+<div class="schedule-page">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (error()) {
+    <mat-card appearance="outlined" class="state-card error-card">
+      <mat-icon>error_outline</mat-icon>
+      <div>
+        <p class="state-title">Something went wrong</p>
+        <p class="state-msg">{{ error() }}</p>
+      </div>
+      <button mat-stroked-button (click)="load()">Retry</button>
+    </mat-card>
+  }
+
+  @if (notFound()) {
+    <mat-card appearance="outlined" class="state-card">
+      <mat-icon>event_busy</mat-icon>
+      <div>
+        <p class="state-title">No planning solution yet</p>
+        <p class="state-msg">Once the optimizer has produced a schedule it will appear here.</p>
+      </div>
+      <button mat-stroked-button (click)="load()">Refresh</button>
+    </mat-card>
+  }
+
+  @if (solution(); as sol) {
+    <!-- Score summary banner -->
+    <mat-card
+      appearance="outlined"
+      class="score-banner"
+      [class.infeasible]="sol.score && !sol.score.feasible"
+    >
+      <div class="score-main">
+        @if (sol.score?.feasible) {
+          <span class="feasible-badge feasible">
+            <mat-icon>verified</mat-icon> Feasible
+          </span>
+        } @else {
+          <span class="feasible-badge infeasible-badge">
+            <mat-icon>report</mat-icon> Infeasible
+          </span>
+        }
+        <div class="score-values">
+          <div class="score-item" [class.negative]="(sol.score?.hardScore ?? 0) < 0">
+            <span class="score-num">{{ sol.score?.hardScore ?? 0 }}</span>
+            <span class="score-label">hard</span>
+          </div>
+          <div class="score-item" [class.negative]="(sol.score?.softScore ?? 0) < 0">
+            <span class="score-num">{{ sol.score?.softScore ?? 0 }}</span>
+            <span class="score-label">soft</span>
+          </div>
+        </div>
+      </div>
+      <button mat-stroked-button (click)="load()">
+        <mat-icon>refresh</mat-icon> Refresh
+      </button>
+    </mat-card>
+
+    <div class="content-layout">
+      <!-- Timetable -->
+      <div class="timetable-wrap">
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title>Conference schedule</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="timetable" [style.--room-count]="rooms().length">
+              <!-- header row -->
+              <div class="grid-head time-col">Time</div>
+              @for (room of rooms(); track room) {
+                <div class="grid-head">{{ room }}</div>
+              }
+
+              <!-- body rows -->
+              @for (row of grid(); track row.start) {
+                <div class="time-col time-cell">
+                  <div class="time-start">{{ row.start || '—' }}</div>
+                  @if (row.end) {
+                    <div class="time-end">{{ row.end }}</div>
+                  }
+                </div>
+                @for (cell of row.cells; track $index) {
+                  <div class="grid-cell">
+                    @if (cell?.talk; as talk) {
+                      <button
+                        type="button"
+                        class="talk-card"
+                        [class.selected]="isSelected(talk)"
+                        [class.violation]="hasHardViolation(talk)"
+                        (click)="selectTalk(talk)"
+                      >
+                        <span class="talk-title">{{ talk.title }}</span>
+                        @if (talk.speaker) {
+                          <span class="talk-speaker">{{ talk.speaker }}</span>
+                        }
+                        <span class="talk-meta">
+                          @if (talk.durationMinutes != null) {
+                            <span>{{ formatDuration(talk.durationMinutes) }}</span>
+                          }
+                          @if (talk.beamerRequired) {
+                            <mat-icon matTooltip="Beamer required">videocam</mat-icon>
+                          }
+                          @if (talk.flipchartRequired) {
+                            <mat-icon matTooltip="Flipchart required">edit_note</mat-icon>
+                          }
+                          @if (talk.favorites != null) {
+                            <span class="fav" matTooltip="Favorites">
+                              <mat-icon>favorite</mat-icon>{{ talk.favorites }}
+                            </span>
+                          }
+                        </span>
+                        @if (hasHardViolation(talk)) {
+                          <mat-icon class="warn-icon" matTooltip="Has hard constraint violation">
+                            warning
+                          </mat-icon>
+                        }
+                      </button>
+                    } @else if (cell) {
+                      <span class="empty-slot">
+                        {{ cell.timeslot.seats }} seats
+                        @if (cell.timeslot.beamerAvailable) {
+                          <mat-icon matTooltip="Beamer available">videocam</mat-icon>
+                        }
+                        @if (cell.timeslot.flipchartAvailable) {
+                          <mat-icon matTooltip="Flipchart available">edit_note</mat-icon>
+                        }
+                      </span>
+                    }
+                  </div>
+                }
+              }
+            </div>
+
+            @if (unassignedTalks().length > 0) {
+              <div class="unassigned">
+                <h3>Unassigned talks</h3>
+                <div class="unassigned-list">
+                  @for (talk of unassignedTalks(); track talk.id) {
+                    <button
+                      type="button"
+                      class="talk-card unassigned-card"
+                      [class.selected]="isSelected(talk)"
+                      (click)="selectTalk(talk)"
+                    >
+                      <span class="talk-title">{{ talk.title }}</span>
+                      @if (talk.speaker) {
+                        <span class="talk-speaker">{{ talk.speaker }}</span>
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Detail / constraint panel -->
+      <div class="detail-wrap">
+        @if (selectedTalk(); as talk) {
+          <mat-card appearance="outlined" class="detail-card">
+            <mat-card-header>
+              <mat-card-title>{{ talk.title }}</mat-card-title>
+              @if (talk.speaker) {
+                <mat-card-subtitle>{{ talk.speaker }}</mat-card-subtitle>
+              }
+              <span class="detail-spacer"></span>
+              <button mat-icon-button (click)="clearSelection()" matTooltip="Close">
+                <mat-icon>close</mat-icon>
+              </button>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="placement">
+                @if (talk.timeslot; as ts) {
+                  <p>
+                    <mat-icon>place</mat-icon>
+                    <strong>{{ ts.room }}</strong>
+                    @if (ts.start) {
+                      &nbsp;· {{ ts.start }}@if (ts.end) {–{{ ts.end }}}
+                    }
+                  </p>
+                  <p class="placement-sub">{{ ts.seats }} seats available</p>
+                } @else {
+                  <p class="placement-sub">Not assigned to any timeslot.</p>
+                }
+              </div>
+
+              @if (talk.score; as sc) {
+                <div class="detail-score">
+                  <mat-chip-set>
+                    <mat-chip [class.negative-chip]="sc.hardScore < 0">
+                      hard {{ sc.hardScore }}
+                    </mat-chip>
+                    <mat-chip [class.negative-chip]="sc.softScore < 0">
+                      soft {{ sc.softScore }}
+                    </mat-chip>
+                  </mat-chip-set>
+                </div>
+              }
+
+              <h4>Why this placement?</h4>
+              @if (talk.constraintMatches && talk.constraintMatches.length > 0) {
+                <ul class="constraint-list">
+                  @for (cm of talk.constraintMatches; track cm.constraintName) {
+                    <li [class.negative]="cm.hardScore < 0 || cm.softScore < 0">
+                      <span class="cm-name">{{ cm.constraintName }}</span>
+                      <span class="cm-scores">
+                        @if (cm.hardScore !== 0) {
+                          <span class="cm-hard">{{ cm.hardScore }}h</span>
+                        }
+                        @if (cm.softScore !== 0) {
+                          <span class="cm-soft">{{ cm.softScore }}s</span>
+                        }
+                      </span>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="empty-hint">No constraint impacts recorded for this talk.</p>
+              }
+            </mat-card-content>
+          </mat-card>
+        } @else {
+          <mat-card appearance="outlined" class="detail-card">
+            <mat-card-header>
+              <mat-card-title>Constraint breakdown</mat-card-title>
+              <mat-card-subtitle>Overall solution impacts</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @if (solutionConstraints().length > 0) {
+                <ul class="constraint-list">
+                  @for (cm of solutionConstraints(); track cm.constraintName) {
+                    <li [class.negative]="cm.hardScore < 0 || cm.softScore < 0">
+                      <span class="cm-name">{{ cm.constraintName }}</span>
+                      <span class="cm-scores">
+                        @if (cm.hardScore !== 0) {
+                          <span class="cm-hard">{{ cm.hardScore }}h</span>
+                        }
+                        @if (cm.softScore !== 0) {
+                          <span class="cm-soft">{{ cm.softScore }}s</span>
+                        }
+                      </span>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="empty-hint">No constraint matches recorded.</p>
+              }
+              <p class="hint-select">Select a talk to see why it was placed there.</p>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+    </div>
+  }
+</div>

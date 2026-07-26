@@ -1,4 +1,18 @@
 <mat-toolbar color="primary" class="app-toolbar">
+  <button
+    mat-flat-button
+    color="accent"
+    class="optimize-btn"
+    (click)="optimizeNow()"
+    [disabled]="optimizing()"
+  >
+    @if (optimizing()) {
+      <mat-spinner diameter="18" />
+    } @else {
+      <mat-icon>bolt</mat-icon>
+    }
+    Optimize now
+  </button>
   <mat-icon class="brand-icon">event_available</mat-icon>
   <span class="brand">Conference Schedule Optimizer</span>
   <span class="spacer"></span>

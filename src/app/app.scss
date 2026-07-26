@@ -9,6 +9,17 @@
   margin-right: 0.5rem;
 }
 
+.optimize-btn {
+  margin-right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+
+  mat-spinner {
+    display: inline-block;
+  }
+}
+
 .brand {
   font-weight: 600;
   letter-spacing: 0.2px;

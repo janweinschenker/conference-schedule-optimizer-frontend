@@ -1,0 +1,75 @@
+.presets-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.preset-card {
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.header-spacer {
+  flex: 1 1 auto;
+}
+
+.preset-table {
+  width: 100%;
+
+  th.actions-col,
+  td.actions-col {
+    width: 110px;
+    text-align: right;
+    white-space: nowrap;
+  }
+}
+
+.editing-row {
+  background: rgba(63, 81, 181, 0.06);
+}
+
+.cell-input {
+  width: 100%;
+  min-width: 90px;
+  box-sizing: border-box;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  font: inherit;
+  background: #fff;
+
+  &:focus {
+    outline: none;
+    border-color: #3f51b5;
+    box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.2);
+  }
+
+  &.ng-invalid.ng-touched {
+    border-color: #d32f2f;
+    box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.15);
+  }
+
+  &--num {
+    max-width: 100px;
+  }
+}
+
+.bool-icon {
+  color: rgba(0, 0, 0, 0.3);
+
+  &.on {
+    color: #2e7d32;
+  }
+}
+
+.empty-hint {
+  padding: 1rem 0.5rem;
+  color: rgba(0, 0, 0, 0.6);
+  font-style: italic;
+}
