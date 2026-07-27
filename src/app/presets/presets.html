@@ -5,6 +5,16 @@
       <mat-card-title>Timeslot presets</mat-card-title>
       <span class="header-spacer"></span>
       <button
+        mat-stroked-button
+        class="reset-btn"
+        (click)="resetTimeslotFilters()"
+        [disabled]="!hasTimeslotFilters() && !timeslotSort().active"
+        matTooltip="Clear all filters and sorting"
+      >
+        <mat-icon>filter_alt_off</mat-icon>
+        Reset
+      </button>
+      <button
         mat-flat-button
         color="primary"
         (click)="addTimeslot()"
@@ -20,10 +30,27 @@
     }
 
     <mat-card-content>
-      <table mat-table [dataSource]="timeslotRows()" class="preset-table">
+      <table
+        mat-table
+        [dataSource]="timeslotRows()"
+        matSort
+        (matSortChange)="onTimeslotSort($event)"
+        class="preset-table"
+      >
         <!-- Room -->
         <ng-container matColumnDef="room">
-          <th mat-header-cell *matHeaderCellDef>Room</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-head">
+              <span mat-sort-header="room" class="sort-label">Room</span>
+              <input
+                class="filter-input"
+                type="text"
+                placeholder="Filter…"
+                [value]="timeslotFilterValue('room')"
+                (input)="setTimeslotFilter('room', $any($event.target).value)"
+              />
+            </div>
+          </th>
           <td mat-cell *matCellDef="let row">
             @if (isEditingTimeslot(row)) {
               <input
@@ -40,7 +67,18 @@
 
         <!-- Start -->
         <ng-container matColumnDef="start">
-          <th mat-header-cell *matHeaderCellDef>Start</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-head">
+              <span mat-sort-header="start" class="sort-label">Start</span>
+              <input
+                class="filter-input"
+                type="text"
+                placeholder="Filter…"
+                [value]="timeslotFilterValue('start')"
+                (input)="setTimeslotFilter('start', $any($event.target).value)"
+              />
+            </div>
+          </th>
           <td mat-cell *matCellDef="let row">
             @if (isEditingTimeslot(row)) {
               <input class="cell-input" type="time" [formControl]="$any(timeslotForm.get('start'))" />
@@ -52,7 +90,18 @@
 
         <!-- End -->
         <ng-container matColumnDef="end">
-          <th mat-header-cell *matHeaderCellDef>End</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-head">
+              <span mat-sort-header="end" class="sort-label">End</span>
+              <input
+                class="filter-input"
+                type="text"
+                placeholder="Filter…"
+                [value]="timeslotFilterValue('end')"
+                (input)="setTimeslotFilter('end', $any($event.target).value)"
+              />
+            </div>
+          </th>
           <td mat-cell *matCellDef="let row">
             @if (isEditingTimeslot(row)) {
               <input class="cell-input" type="time" [formControl]="$any(timeslotForm.get('end'))" />
@@ -64,7 +113,18 @@
 
         <!-- Seats -->
         <ng-container matColumnDef="seats">
-          <th mat-header-cell *matHeaderCellDef>Seats</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-head">
+              <span mat-sort-header="seats" class="sort-label">Seats</span>
+              <input
+                class="filter-input"
+                type="text"
+                placeholder="Filter…"
+                [value]="timeslotFilterValue('seats')"
+                (input)="setTimeslotFilter('seats', $any($event.target).value)"
+              />
+            </div>
+          </th>
           <td mat-cell *matCellDef="let row">
             @if (isEditingTimeslot(row)) {
               <input
@@ -81,7 +141,20 @@
 
         <!-- Beamer -->
         <ng-container matColumnDef="beamer">
-          <th mat-header-cell *matHeaderCellDef>Beamer</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-head">
+              <span mat-sort-header="beamer" class="sort-label">Beamer</span>
+              <select
+                class="filter-input"
+                [value]="timeslotFilterValue('beamer')"
+                (change)="setTimeslotFilter('beamer', $any($event.target).value)"
+              >
+                <option value="">All</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let row">
             @if (isEditingTimeslot(row)) {
               <mat-checkbox [formControl]="$any(timeslotForm.get('beamerAvailable'))" />
@@ -95,7 +168,20 @@
 
         <!-- Flipchart -->
         <ng-container matColumnDef="flipchart">
-          <th mat-header-cell *matHeaderCellDef>Flipchart</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-head">
+              <span mat-sort-header="flipchart" class="sort-label">Flipchart</span>
+              <select
+                class="filter-input"
+                [value]="timeslotFilterValue('flipchart')"
+                (change)="setTimeslotFilter('flipchart', $any($event.target).value)"
+              >
+                <option value="">All</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let row">
             @if (isEditingTimeslot(row)) {
               <mat-checkbox [formControl]="$any(timeslotForm.get('flipchartAvailable'))" />
@@ -109,7 +195,9 @@
 
         <!-- Actions -->
         <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef class="actions-col">Actions</th>
+          <th mat-header-cell *matHeaderCellDef class="actions-col">
+            <div class="col-head actions-head"><span class="sort-label static">Actions</span></div>
+          </th>
           <td mat-cell *matCellDef="let row" class="actions-col">
             @if (isEditingTimeslot(row)) {
               <button
@@ -155,7 +243,13 @@
       </table>
 
       @if (timeslotRows().length === 0 && !timeslotLoading()) {
-        <p class="empty-hint">No timeslot presets yet. Add one to get started.</p>
+        <p class="empty-hint">
+          @if (hasTimeslotFilters()) {
+            No timeslot presets match the current filters.
+          } @else {
+            No timeslot presets yet. Add one to get started.
+          }
+        </p>
       }
     </mat-card-content>
   </mat-card>
@@ -165,6 +259,16 @@
     <mat-card-header class="card-header">
       <mat-card-title>Talk presets</mat-card-title>
       <span class="header-spacer"></span>
+      <button
+        mat-stroked-button
+        class="reset-btn"
+        (click)="resetTalkFilters()"
+        [disabled]="!hasTalkFilters() && !talkSort().active"
+        matTooltip="Clear all filters and sorting"
+      >
+        <mat-icon>filter_alt_off</mat-icon>
+        Reset
+      </button>
       <button
         mat-flat-button
         color="primary"
@@ -181,10 +285,27 @@
     }
 
     <mat-card-content>
-      <table mat-table [dataSource]="talkRows()" class="preset-table">
+      <table
+        mat-table
+        [dataSource]="talkRows()"
+        matSort
+        (matSortChange)="onTalkSort($event)"
+        class="preset-table"
+      >
         <!-- Title -->
         <ng-container matColumnDef="title">
-          <th mat-header-cell *matHeaderCellDef>Title</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-head">
+              <span mat-sort-header="title" class="sort-label">Title</span>
+              <input
+                class="filter-input"
+                type="text"
+                placeholder="Filter…"
+                [value]="talkFilterValue('title')"
+                (input)="setTalkFilter('title', $any($event.target).value)"
+              />
+            </div>
+          </th>
           <td mat-cell *matCellDef="let row">
             @if (isEditingTalk(row)) {
               <input
@@ -201,7 +322,18 @@
 
         <!-- Speaker -->
         <ng-container matColumnDef="speaker">
-          <th mat-header-cell *matHeaderCellDef>Speaker</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-head">
+              <span mat-sort-header="speaker" class="sort-label">Speaker</span>
+              <input
+                class="filter-input"
+                type="text"
+                placeholder="Filter…"
+                [value]="talkFilterValue('speaker')"
+                (input)="setTalkFilter('speaker', $any($event.target).value)"
+              />
+            </div>
+          </th>
           <td mat-cell *matCellDef="let row">
             @if (isEditingTalk(row)) {
               <input
@@ -218,7 +350,18 @@
 
         <!-- Duration -->
         <ng-container matColumnDef="duration">
-          <th mat-header-cell *matHeaderCellDef>Duration (min)</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-head">
+              <span mat-sort-header="duration" class="sort-label">Duration (min)</span>
+              <input
+                class="filter-input"
+                type="text"
+                placeholder="Filter…"
+                [value]="talkFilterValue('duration')"
+                (input)="setTalkFilter('duration', $any($event.target).value)"
+              />
+            </div>
+          </th>
           <td mat-cell *matCellDef="let row">
             @if (isEditingTalk(row)) {
               <input
@@ -235,7 +378,18 @@
 
         <!-- Favorites -->
         <ng-container matColumnDef="favorites">
-          <th mat-header-cell *matHeaderCellDef>Favorites</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-head">
+              <span mat-sort-header="favorites" class="sort-label">Favorites</span>
+              <input
+                class="filter-input"
+                type="text"
+                placeholder="Filter…"
+                [value]="talkFilterValue('favorites')"
+                (input)="setTalkFilter('favorites', $any($event.target).value)"
+              />
+            </div>
+          </th>
           <td mat-cell *matCellDef="let row">
             @if (isEditingTalk(row)) {
               <input
@@ -252,7 +406,20 @@
 
         <!-- Beamer -->
         <ng-container matColumnDef="beamer">
-          <th mat-header-cell *matHeaderCellDef>Beamer</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-head">
+              <span mat-sort-header="beamer" class="sort-label">Beamer</span>
+              <select
+                class="filter-input"
+                [value]="talkFilterValue('beamer')"
+                (change)="setTalkFilter('beamer', $any($event.target).value)"
+              >
+                <option value="">All</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let row">
             @if (isEditingTalk(row)) {
               <mat-checkbox [formControl]="$any(talkForm.get('beamerRequired'))" />
@@ -266,7 +433,20 @@
 
         <!-- Flipchart -->
         <ng-container matColumnDef="flipchart">
-          <th mat-header-cell *matHeaderCellDef>Flipchart</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-head">
+              <span mat-sort-header="flipchart" class="sort-label">Flipchart</span>
+              <select
+                class="filter-input"
+                [value]="talkFilterValue('flipchart')"
+                (change)="setTalkFilter('flipchart', $any($event.target).value)"
+              >
+                <option value="">All</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let row">
             @if (isEditingTalk(row)) {
               <mat-checkbox [formControl]="$any(talkForm.get('flipchartRequired'))" />
@@ -280,7 +460,9 @@
 
         <!-- Actions -->
         <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef class="actions-col">Actions</th>
+          <th mat-header-cell *matHeaderCellDef class="actions-col">
+            <div class="col-head actions-head"><span class="sort-label static">Actions</span></div>
+          </th>
           <td mat-cell *matCellDef="let row" class="actions-col">
             @if (isEditingTalk(row)) {
               <button
@@ -326,7 +508,13 @@
       </table>
 
       @if (talkRows().length === 0 && !talkLoading()) {
-        <p class="empty-hint">No talk presets yet. Add one to get started.</p>
+        <p class="empty-hint">
+          @if (hasTalkFilters()) {
+            No talk presets match the current filters.
+          } @else {
+            No talk presets yet. Add one to get started.
+          }
+        </p>
       }
     </mat-card-content>
   </mat-card>

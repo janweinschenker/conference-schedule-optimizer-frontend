@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
+import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -21,11 +22,14 @@ import { ConfirmDialog, ConfirmDialogData } from '../shared/confirm-dialog/confi
 
 const NEW_ID = -1;
 
+type CellValue = string | number | boolean;
+
 @Component({
   selector: 'app-presets',
   imports: [
     ReactiveFormsModule,
     MatTableModule,
+    MatSortModule,
     MatButtonModule,
     MatIconModule,
     MatCheckboxModule,
@@ -57,11 +61,38 @@ export class Presets implements OnInit {
     'flipchart',
     'actions',
   ];
+  private readonly timeslotBooleanColumns = ['beamer', 'flipchart'];
+  protected readonly timeslotSort = signal<Sort>({ active: '', direction: '' });
+  protected readonly timeslotFilters = signal<Record<string, string>>({});
+  protected readonly hasTimeslotFilters = computed(() =>
+    Object.values(this.timeslotFilters()).some((v) => v !== ''),
+  );
+  private readonly timeslotValue = (row: TimeslotPresetViewModel, col: string): CellValue => {
+    switch (col) {
+      case 'room':
+        return row.room ?? '';
+      case 'start':
+        return row.start ?? '';
+      case 'end':
+        return row.end ?? '';
+      case 'seats':
+        return row.seats;
+      case 'beamer':
+        return row.beamerAvailable ?? false;
+      case 'flipchart':
+        return row.flipchartAvailable ?? false;
+      default:
+        return '';
+    }
+  };
   protected readonly timeslotRows = computed<TimeslotPresetViewModel[]>(() => {
-    const rows = this.timeslots();
+    const filtered = this.timeslots().filter((r) =>
+      this.matchesFilters(r, this.timeslotFilters(), this.timeslotValue, this.timeslotBooleanColumns),
+    );
+    const sorted = this.sortRows(filtered, this.timeslotSort(), this.timeslotValue);
     return this.editingTimeslotId() === NEW_ID
-      ? [{ id: NEW_ID, room: '', seats: 0 } as TimeslotPresetViewModel, ...rows]
-      : rows;
+      ? [{ id: NEW_ID, room: '', seats: 0 } as TimeslotPresetViewModel, ...sorted]
+      : sorted;
   });
   protected timeslotForm: FormGroup = this.buildTimeslotForm();
 
@@ -78,11 +109,38 @@ export class Presets implements OnInit {
     'flipchart',
     'actions',
   ];
+  private readonly talkBooleanColumns = ['beamer', 'flipchart'];
+  protected readonly talkSort = signal<Sort>({ active: '', direction: '' });
+  protected readonly talkFilters = signal<Record<string, string>>({});
+  protected readonly hasTalkFilters = computed(() =>
+    Object.values(this.talkFilters()).some((v) => v !== ''),
+  );
+  private readonly talkValue = (row: TalkPresetViewModel, col: string): CellValue => {
+    switch (col) {
+      case 'title':
+        return row.title ?? '';
+      case 'speaker':
+        return row.speaker ?? '';
+      case 'duration':
+        return row.durationMinutes ?? '';
+      case 'favorites':
+        return row.favorites ?? '';
+      case 'beamer':
+        return row.beamerRequired ?? false;
+      case 'flipchart':
+        return row.flipchartRequired ?? false;
+      default:
+        return '';
+    }
+  };
   protected readonly talkRows = computed<TalkPresetViewModel[]>(() => {
-    const rows = this.talks();
+    const filtered = this.talks().filter((r) =>
+      this.matchesFilters(r, this.talkFilters(), this.talkValue, this.talkBooleanColumns),
+    );
+    const sorted = this.sortRows(filtered, this.talkSort(), this.talkValue);
     return this.editingTalkId() === NEW_ID
-      ? [{ id: NEW_ID, title: '' } as TalkPresetViewModel, ...rows]
-      : rows;
+      ? [{ id: NEW_ID, title: '' } as TalkPresetViewModel, ...sorted]
+      : sorted;
   });
   protected talkForm: FormGroup = this.buildTalkForm();
 
@@ -287,6 +345,80 @@ export class Presets implements OnInit {
         error: () => this.fail('Could not delete talk preset'),
       });
     });
+  }
+
+  // ==== Sorting & filtering ==============================================
+
+  protected onTimeslotSort(sort: Sort): void {
+    this.timeslotSort.set(sort);
+  }
+
+  protected onTalkSort(sort: Sort): void {
+    this.talkSort.set(sort);
+  }
+
+  protected setTimeslotFilter(column: string, value: string): void {
+    this.timeslotFilters.update((f) => ({ ...f, [column]: value }));
+  }
+
+  protected setTalkFilter(column: string, value: string): void {
+    this.talkFilters.update((f) => ({ ...f, [column]: value }));
+  }
+
+  protected timeslotFilterValue(column: string): string {
+    return this.timeslotFilters()[column] ?? '';
+  }
+
+  protected talkFilterValue(column: string): string {
+    return this.talkFilters()[column] ?? '';
+  }
+
+  protected resetTimeslotFilters(): void {
+    this.timeslotFilters.set({});
+    this.timeslotSort.set({ active: '', direction: '' });
+  }
+
+  protected resetTalkFilters(): void {
+    this.talkFilters.set({});
+    this.talkSort.set({ active: '', direction: '' });
+  }
+
+  private matchesFilters<T>(
+    row: T,
+    filters: Record<string, string>,
+    valueFn: (row: T, col: string) => CellValue,
+    booleanColumns: string[],
+  ): boolean {
+    return Object.entries(filters).every(([col, filter]) => {
+      if (!filter) {
+        return true;
+      }
+      const value = valueFn(row, col);
+      if (booleanColumns.includes(col)) {
+        return String(value) === filter;
+      }
+      return String(value).toLowerCase().includes(filter.toLowerCase());
+    });
+  }
+
+  private sortRows<T>(rows: T[], sort: Sort, valueFn: (row: T, col: string) => CellValue): T[] {
+    if (!sort.active || sort.direction === '') {
+      return rows;
+    }
+    const factor = sort.direction === 'asc' ? 1 : -1;
+    return [...rows].sort(
+      (a, b) => factor * this.compare(valueFn(a, sort.active), valueFn(b, sort.active)),
+    );
+  }
+
+  private compare(a: CellValue, b: CellValue): number {
+    if (typeof a === 'number' && typeof b === 'number') {
+      return a - b;
+    }
+    if (typeof a === 'boolean' && typeof b === 'boolean') {
+      return (a ? 1 : 0) - (b ? 1 : 0);
+    }
+    return String(a).localeCompare(String(b), undefined, { numeric: true });
   }
 
   // ==== Helpers ===========================================================
