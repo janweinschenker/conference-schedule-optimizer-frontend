@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -7,8 +8,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 import {
+  ExplainApi,
   PlanningsolutionApi,
   PlanningSolutionViewModel,
   TalkViewModel,
@@ -27,29 +32,47 @@ interface GridRow {
   cells: (GridCell | undefined)[];
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  text: string;
+}
+
 @Component({
   selector: 'app-schedule',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
     MatChipsModule,
     MatIconModule,
     MatButtonModule,
     MatTooltipModule,
     MatProgressBarModule,
+    MatProgressSpinnerModule,
+    MatFormFieldModule,
+    MatInputModule,
   ],
   templateUrl: './schedule.html',
   styleUrl: './schedule.scss',
 })
 export class Schedule {
   private readonly api = inject(PlanningsolutionApi);
+  private readonly explainApi = inject(ExplainApi);
 
   readonly loading = signal(true);
   readonly notFound = signal(false);
   readonly error = signal<string | null>(null);
   readonly solution = signal<PlanningSolutionViewModel | null>(null);
   readonly selectedTalkId = signal<number | null>(null);
+
+  // --- Explain / ask-the-planner conversation state ---
+  readonly chatMessages = signal<ChatMessage[]>([]);
+  readonly question = signal('');
+  readonly asking = signal(false);
+  readonly askError = signal<string | null>(null);
+  readonly usedModel = signal<string | null>(null);
+  private conversationId: string | null = null;
 
   readonly rooms = computed<string[]>(() => {
     const sol = this.solution();
@@ -139,6 +162,52 @@ export class Schedule {
 
   clearSelection(): void {
     this.selectedTalkId.set(null);
+  }
+
+  askSuggested(text: string): void {
+    this.question.set(text);
+    this.ask();
+  }
+
+  ask(): void {
+    const q = this.question().trim();
+    const sol = this.solution();
+    if (!q || this.asking() || !sol) return;
+
+    this.chatMessages.update((msgs) => [...msgs, { role: 'user', text: q }]);
+    this.question.set('');
+    this.asking.set(true);
+    this.askError.set(null);
+
+    this.explainApi
+      .explainPlanningSolution({
+        question: q,
+        planningSolutionId: sol.id,
+        conversationId: this.conversationId ?? undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          this.conversationId = res.conversationId;
+          this.usedModel.set(res.model);
+          this.chatMessages.update((msgs) => [...msgs, { role: 'assistant', text: res.answer }]);
+          this.asking.set(false);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.asking.set(false);
+          this.askError.set(
+            err.status === 404
+              ? 'No planning solution available to explain yet.'
+              : 'Failed to get an answer. Is the backend (and OpenAI key) configured?',
+          );
+        },
+      });
+  }
+
+  resetConversation(): void {
+    this.conversationId = null;
+    this.chatMessages.set([]);
+    this.askError.set(null);
+    this.usedModel.set(null);
   }
 
   hasHardViolation(talk: TalkViewModel | undefined): boolean {

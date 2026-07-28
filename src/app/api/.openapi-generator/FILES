@@ -3,6 +3,8 @@ README.md
 api.base.service.ts
 api.module.ts
 api/api.ts
+api/explain.api.ts
+api/explain.apiInterface.ts
 api/planningsolution.api.ts
 api/planningsolution.apiInterface.ts
 api/preset.api.ts
@@ -12,6 +14,8 @@ encoder.ts
 git_push.sh
 index.ts
 model/constraint-match-view-model.ts
+model/explanation-request.ts
+model/explanation-view-model.ts
 model/models.ts
 model/planning-solution-view-model.ts
 model/score-view-model.ts

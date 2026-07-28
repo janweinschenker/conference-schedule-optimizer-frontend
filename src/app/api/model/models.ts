@@ -1,4 +1,6 @@
 export * from './constraint-match-view-model';
+export * from './explanation-request';
+export * from './explanation-view-model';
 export * from './planning-solution-view-model';
 export * from './score-view-model';
 export * from './talk-preset-request';

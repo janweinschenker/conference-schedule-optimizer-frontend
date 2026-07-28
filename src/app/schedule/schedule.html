@@ -252,6 +252,101 @@
             </mat-card-content>
           </mat-card>
         }
+
+        <!-- Ask the planner (GenAI explanation) -->
+        <mat-card appearance="outlined" class="ask-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon class="ask-title-icon">auto_awesome</mat-icon> Ask the planner
+            </mat-card-title>
+            <mat-card-subtitle>
+              Explain this schedule in plain language
+              @if (usedModel(); as m) {
+                · <span class="ask-model">{{ m }}</span>
+              }
+            </mat-card-subtitle>
+            <span class="detail-spacer"></span>
+            @if (chatMessages().length > 0) {
+              <button mat-icon-button (click)="resetConversation()" matTooltip="Start a new conversation">
+                <mat-icon>restart_alt</mat-icon>
+              </button>
+            }
+          </mat-card-header>
+          <mat-card-content>
+            @if (chatMessages().length === 0 && !asking()) {
+              <div class="ask-suggestions">
+                @if (selectedTalk(); as t) {
+                  <button
+                    mat-stroked-button
+                    (click)="askSuggested('Why was the talk \'' + t.title + '\' placed in this timeslot and not another one?')"
+                  >
+                    Why is “{{ t.title }}” here?
+                  </button>
+                }
+                <button
+                  mat-stroked-button
+                  (click)="askSuggested('Is this schedule feasible, and what are the main trade-offs the optimizer made?')"
+                >
+                  Is this schedule feasible?
+                </button>
+                <button
+                  mat-stroked-button
+                  (click)="askSuggested('Which talks have the biggest constraint penalties and why?')"
+                >
+                  Biggest penalties?
+                </button>
+              </div>
+            }
+
+            <div class="chat-log">
+              @for (msg of chatMessages(); track $index) {
+                <div class="chat-msg" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+                  <mat-icon class="chat-avatar">
+                    {{ msg.role === 'user' ? 'person' : 'auto_awesome' }}
+                  </mat-icon>
+                  <div class="chat-bubble">{{ msg.text }}</div>
+                </div>
+              }
+              @if (asking()) {
+                <div class="chat-msg assistant">
+                  <mat-icon class="chat-avatar">auto_awesome</mat-icon>
+                  <div class="chat-bubble thinking">
+                    <mat-progress-spinner mode="indeterminate" [diameter]="18" />
+                    <span>Thinking…</span>
+                  </div>
+                </div>
+              }
+            </div>
+
+            @if (askError()) {
+              <p class="ask-error"><mat-icon>error_outline</mat-icon> {{ askError() }}</p>
+            }
+
+            <form class="ask-form" (ngSubmit)="ask()">
+              <mat-form-field appearance="outline" class="ask-field">
+                <mat-label>Ask a question about this schedule…</mat-label>
+                <textarea
+                  matInput
+                  rows="2"
+                  [ngModel]="question()"
+                  (ngModelChange)="question.set($event)"
+                  name="question"
+                  [disabled]="asking()"
+                  (keydown.enter)="$event.preventDefault(); ask()"
+                ></textarea>
+              </mat-form-field>
+              <button
+                mat-flat-button
+                color="primary"
+                type="submit"
+                class="ask-send"
+                [disabled]="asking() || !question().trim()"
+              >
+                <mat-icon>send</mat-icon> Ask
+              </button>
+            </form>
+          </mat-card-content>
+        </mat-card>
       </div>
     </div>
   }

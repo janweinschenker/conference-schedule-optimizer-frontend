@@ -361,3 +361,111 @@
   font-size: 0.85rem;
   color: rgba(0, 0, 0, 0.5);
 }
+
+/* --- Ask the planner (GenAI) --- */
+.ask-card {
+  margin-top: 1rem;
+
+  .ask-title-icon {
+    vertical-align: middle;
+    color: #7b2ff7;
+  }
+
+  .ask-model {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem;
+  }
+}
+
+.ask-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+
+  button {
+    font-size: 0.8rem;
+    line-height: 1.2;
+  }
+}
+
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.chat-msg {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+
+  .chat-avatar {
+    flex: 0 0 auto;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: rgba(0, 0, 0, 0.45);
+  }
+
+  .chat-bubble {
+    padding: 0.55rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  &.user {
+    flex-direction: row-reverse;
+
+    .chat-bubble {
+      background: #ede7f6;
+      border-bottom-right-radius: 3px;
+    }
+
+    .chat-avatar {
+      color: #7b2ff7;
+    }
+  }
+
+  &.assistant .chat-bubble {
+    background: #f5f5f5;
+    border-bottom-left-radius: 3px;
+  }
+
+  .chat-bubble.thinking {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(0, 0, 0, 0.55);
+  }
+}
+
+.ask-error {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
+.ask-form {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+
+  .ask-field {
+    flex: 1 1 auto;
+  }
+
+  .ask-send {
+    margin-top: 0.25rem;
+    white-space: nowrap;
+  }
+}
