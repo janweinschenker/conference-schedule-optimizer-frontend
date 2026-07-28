@@ -107,6 +107,8 @@ export class Presets implements OnInit {
     'favorites',
     'beamer',
     'flipchart',
+    'timePreset',
+    'roomPreset',
     'actions',
   ];
   private readonly talkBooleanColumns = ['beamer', 'flipchart'];
@@ -129,6 +131,10 @@ export class Presets implements OnInit {
         return row.beamerRequired ?? false;
       case 'flipchart':
         return row.flipchartRequired ?? false;
+      case 'timePreset':
+        return row.timePreset ?? '';
+      case 'roomPreset':
+        return row.roomPreset ?? '';
       default:
         return '';
     }
@@ -143,6 +149,14 @@ export class Presets implements OnInit {
       : sorted;
   });
   protected talkForm: FormGroup = this.buildTalkForm();
+
+  /** Distinct room names from the configured timeslots, used to populate the pin-room dropdown. */
+  protected readonly roomOptions = computed<string[]>(() => {
+    const rooms = this.timeslots()
+      .map((t) => t.room)
+      .filter((room): room is string => !!room);
+    return [...new Set(rooms)].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  });
 
   ngOnInit(): void {
     this.loadTimeslots();
@@ -258,6 +272,8 @@ export class Presets implements OnInit {
       favorites: [null, [Validators.min(0)]],
       beamerRequired: [false],
       flipchartRequired: [false],
+      timePreset: [''],
+      roomPreset: [''],
     });
   }
 
@@ -293,6 +309,8 @@ export class Presets implements OnInit {
       favorites: row.favorites ?? null,
       beamerRequired: row.beamerRequired ?? false,
       flipchartRequired: row.flipchartRequired ?? false,
+      timePreset: row.timePreset ?? '',
+      roomPreset: row.roomPreset ?? '',
     });
     this.editingTalkId.set(row.id);
   }

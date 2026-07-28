@@ -21,6 +21,14 @@ export interface TalkPresetViewModel {
      */
     favorites?: number;
     /**
+     * Optional pinned start time (ISO-8601 local time, e.g. \"09:00\"). When set and a timeslot with this start time exists, the talk is locked to it during planning; otherwise the preset is ignored.
+     */
+    timePreset?: string;
+    /**
+     * Optional pinned room name. Only honored together with timePreset, and only when a timeslot with the matching start time and room exists; otherwise the preset is ignored.
+     */
+    roomPreset?: string;
+    /**
      * Creation timestamp (ISO-8601), read-only
      */
     created?: string;
