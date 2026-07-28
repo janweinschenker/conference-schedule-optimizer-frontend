@@ -111,6 +111,7 @@
                             </span>
                           }
                         </span>
+                        <span class="talk-ids">Talk #{{ talk.id }} · Timeslot #{{ talk.timeslot?.id ?? '—' }}</span>
                         @if (hasHardViolation(talk)) {
                           <mat-icon class="warn-icon" matTooltip="Has hard constraint violation">
                             warning
@@ -185,6 +186,7 @@
                 } @else {
                   <p class="placement-sub">Not assigned to any timeslot.</p>
                 }
+                <p class="placement-ids">Talk #{{ talk.id }} · Timeslot #{{ talk.timeslot?.id ?? '—' }}</p>
               </div>
 
               @if (talk.score; as sc) {

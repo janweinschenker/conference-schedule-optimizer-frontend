@@ -223,6 +223,12 @@
     }
   }
 
+  .talk-ids {
+    font-size: 0.68rem;
+    color: rgba(0, 0, 0, 0.45);
+    font-variant-numeric: tabular-nums;
+  }
+
   .warn-icon {
     position: absolute;
     top: 4px;
@@ -298,6 +304,13 @@
 .placement-sub {
   color: rgba(0, 0, 0, 0.6);
   font-size: 0.85rem;
+}
+
+.placement-ids {
+  margin-top: 0.15rem;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .detail-score {
