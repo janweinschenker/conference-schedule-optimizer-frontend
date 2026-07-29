@@ -20,6 +20,14 @@ export interface TalkViewModel {
     beamerRequired?: boolean;
     flipchartRequired?: boolean;
     favorites?: number;
+    /**
+     * The pinned start time this talk was planned with (ISO-8601 local time, e.g. \"09:00\"), or absent if the talk was not pinned.
+     */
+    timePreset?: string;
+    /**
+     * The pinned room name this talk was planned with, or absent if no room was pinned.
+     */
+    roomPreset?: string;
     timeslot?: TimeslotViewModel;
     score?: ScoreViewModel;
     constraintMatches?: Array<ConstraintMatchViewModel>;

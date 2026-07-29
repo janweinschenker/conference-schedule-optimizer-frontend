@@ -96,6 +96,9 @@
                           <span class="talk-speaker">{{ talk.speaker }}</span>
                         }
                         <span class="talk-meta">
+                          @if (isPinned(talk)) {
+                            <span class="pin" [matTooltip]="pinTooltip(talk)">&#x1F4CC;</span>
+                          }
                           @if (talk.durationMinutes != null) {
                             <span>{{ formatDuration(talk.durationMinutes) }}</span>
                           }

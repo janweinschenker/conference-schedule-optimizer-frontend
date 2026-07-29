@@ -218,6 +218,17 @@ export class Schedule {
     return !!talk && this.selectedTalkId() === talk.id;
   }
 
+  isPinned(talk: TalkViewModel | undefined): boolean {
+    return !!talk && (talk.timePreset != null || talk.roomPreset != null);
+  }
+
+  /** Describes what a talk was pinned to, e.g. "Pinned to 09:00 · Room 1". */
+  pinTooltip(talk: TalkViewModel | undefined): string {
+    if (!this.isPinned(talk)) return '';
+    const parts = [talk!.timePreset, talk!.roomPreset].filter((p) => p != null);
+    return `Pinned to ${parts.join(' · ')}`;
+  }
+
   formatDuration(min: number | undefined): string {
     return min != null ? `${min} min` : '';
   }
