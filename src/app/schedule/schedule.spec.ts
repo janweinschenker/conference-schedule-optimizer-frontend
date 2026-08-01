@@ -154,4 +154,26 @@ describe('Schedule (live SSE refresh)', () => {
     // then the stale response is discarded — the newest solution stays on screen
     expect(sut.solution()?.id).toBe(3);
   });
+
+  it('shows every talk sharing a timeslot instead of silently dropping one', () => {
+    // given an infeasible solution where two talks were assigned the same timeslot
+    const timeslot = { id: 10, room: 'Toucan', start: '09:00', end: '09:45', seats: 120 };
+    getLatest.mockReturnValueOnce(
+      of({
+        id: 1,
+        timeslots: [timeslot],
+        talks: [
+          { id: 1, title: 'First', timeslot },
+          { id: 2, title: 'Second', timeslot },
+        ],
+      } as unknown as PlanningSolutionViewModel),
+    );
+
+    // when the schedule grid is built
+    createComponent();
+    const cell = sut.grid()[0].cells[0];
+
+    // then both talks are present in that cell, so neither disappears from the timetable
+    expect(cell?.talks.map((t) => t.id)).toEqual([1, 2]);
+  });
 });

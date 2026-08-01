@@ -34,9 +34,7 @@
     >
       <div class="score-main">
         @if (sol.score?.feasible) {
-          <span class="feasible-badge feasible">
-            <mat-icon>verified</mat-icon> Feasible
-          </span>
+          <span class="feasible-badge feasible"> <mat-icon>verified</mat-icon> Feasible </span>
         } @else {
           <span class="feasible-badge infeasible-badge">
             <mat-icon>report</mat-icon> Infeasible
@@ -47,15 +45,17 @@
             <span class="score-num">{{ sol.score?.hardScore ?? 0 }}</span>
             <span class="score-label">hard</span>
           </div>
+          <div class="score-item" [class.negative]="(sol.score?.mediumScore ?? 0) < 0">
+            <span class="score-num">{{ sol.score?.mediumScore ?? 0 }}</span>
+            <span class="score-label">medium</span>
+          </div>
           <div class="score-item" [class.negative]="(sol.score?.softScore ?? 0) < 0">
             <span class="score-num">{{ sol.score?.softScore ?? 0 }}</span>
             <span class="score-label">soft</span>
           </div>
         </div>
       </div>
-      <button mat-stroked-button (click)="load()">
-        <mat-icon>refresh</mat-icon> Refresh
-      </button>
+      <button mat-stroked-button (click)="load()"><mat-icon>refresh</mat-icon> Refresh</button>
     </mat-card>
 
     <div class="content-layout">
@@ -83,44 +83,57 @@
                 </div>
                 @for (cell of row.cells; track $index) {
                   <div class="grid-cell">
-                    @if (cell?.talk; as talk) {
-                      <button
-                        type="button"
-                        class="talk-card"
-                        [class.selected]="isSelected(talk)"
-                        [class.violation]="hasHardViolation(talk)"
-                        (click)="selectTalk(talk)"
-                      >
-                        <span class="talk-title">{{ talk.title }}</span>
-                        @if (talk.speaker) {
-                          <span class="talk-speaker">{{ talk.speaker }}</span>
-                        }
-                        <span class="talk-meta">
-                          @if (isPinned(talk)) {
-                            <span class="pin" [matTooltip]="pinTooltip(talk)">&#x1F4CC;</span>
+                    @if (cell && cell.talks.length > 0) {
+                      @if (cell.talks.length > 1) {
+                        <span
+                          class="conflict-badge"
+                          matTooltip="{{
+                            cell.talks.length
+                          }} talks are scheduled in this slot — only one can actually take place"
+                          >&#x26A0; {{ cell.talks.length }} talks in this slot</span
+                        >
+                      }
+                      @for (talk of cell.talks; track talk.id) {
+                        <button
+                          type="button"
+                          class="talk-card"
+                          [class.selected]="isSelected(talk)"
+                          [class.violation]="hasHardViolation(talk)"
+                          (click)="selectTalk(talk)"
+                        >
+                          <span class="talk-title">{{ talk.title }}</span>
+                          @if (talk.speaker) {
+                            <span class="talk-speaker">{{ talk.speaker }}</span>
                           }
-                          @if (talk.durationMinutes != null) {
-                            <span>{{ formatDuration(talk.durationMinutes) }}</span>
+                          <span class="talk-meta">
+                            @if (isPinned(talk)) {
+                              <span class="pin" [matTooltip]="pinTooltip(talk)">&#x1F4CC;</span>
+                            }
+                            @if (talk.durationMinutes != null) {
+                              <span>{{ formatDuration(talk.durationMinutes) }}</span>
+                            }
+                            @if (talk.beamerRequired) {
+                              <mat-icon matTooltip="Beamer required">videocam</mat-icon>
+                            }
+                            @if (talk.flipchartRequired) {
+                              <mat-icon matTooltip="Flipchart required">edit_note</mat-icon>
+                            }
+                            @if (talk.favorites != null) {
+                              <span class="fav" matTooltip="Favorites">
+                                <mat-icon>favorite</mat-icon>{{ talk.favorites }}
+                              </span>
+                            }
+                          </span>
+                          <span class="talk-ids"
+                            >Talk #{{ talk.id }} · Timeslot #{{ talk.timeslot?.id ?? '—' }}</span
+                          >
+                          @if (hasHardViolation(talk)) {
+                            <mat-icon class="warn-icon" matTooltip="Has hard constraint violation">
+                              warning
+                            </mat-icon>
                           }
-                          @if (talk.beamerRequired) {
-                            <mat-icon matTooltip="Beamer required">videocam</mat-icon>
-                          }
-                          @if (talk.flipchartRequired) {
-                            <mat-icon matTooltip="Flipchart required">edit_note</mat-icon>
-                          }
-                          @if (talk.favorites != null) {
-                            <span class="fav" matTooltip="Favorites">
-                              <mat-icon>favorite</mat-icon>{{ talk.favorites }}
-                            </span>
-                          }
-                        </span>
-                        <span class="talk-ids">Talk #{{ talk.id }} · Timeslot #{{ talk.timeslot?.id ?? '—' }}</span>
-                        @if (hasHardViolation(talk)) {
-                          <mat-icon class="warn-icon" matTooltip="Has hard constraint violation">
-                            warning
-                          </mat-icon>
-                        }
-                      </button>
+                        </button>
+                      }
                     } @else if (cell) {
                       <span class="empty-slot">
                         {{ cell.timeslot.seats }} seats
@@ -182,14 +195,19 @@
                     <mat-icon>place</mat-icon>
                     <strong>{{ ts.room }}</strong>
                     @if (ts.start) {
-                      &nbsp;· {{ ts.start }}@if (ts.end) {–{{ ts.end }}}
+                      &nbsp;· {{ ts.start }}
+                      @if (ts.end) {
+                        –{{ ts.end }}
+                      }
                     }
                   </p>
                   <p class="placement-sub">{{ ts.seats }} seats available</p>
                 } @else {
                   <p class="placement-sub">Not assigned to any timeslot.</p>
                 }
-                <p class="placement-ids">Talk #{{ talk.id }} · Timeslot #{{ talk.timeslot?.id ?? '—' }}</p>
+                <p class="placement-ids">
+                  Talk #{{ talk.id }} · Timeslot #{{ talk.timeslot?.id ?? '—' }}
+                </p>
               </div>
 
               @if (talk.score; as sc) {
@@ -197,6 +215,9 @@
                   <mat-chip-set>
                     <mat-chip [class.negative-chip]="sc.hardScore < 0">
                       hard {{ sc.hardScore }}
+                    </mat-chip>
+                    <mat-chip [class.negative-chip]="sc.mediumScore < 0">
+                      medium {{ sc.mediumScore }}
                     </mat-chip>
                     <mat-chip [class.negative-chip]="sc.softScore < 0">
                       soft {{ sc.softScore }}
@@ -209,11 +230,16 @@
               @if (talk.constraintMatches && talk.constraintMatches.length > 0) {
                 <ul class="constraint-list">
                   @for (cm of talk.constraintMatches; track cm.constraintName) {
-                    <li [class.negative]="cm.hardScore < 0 || cm.softScore < 0">
+                    <li
+                      [class.negative]="cm.hardScore < 0 || cm.mediumScore < 0 || cm.softScore < 0"
+                    >
                       <span class="cm-name">{{ cm.constraintName }}</span>
                       <span class="cm-scores">
                         @if (cm.hardScore !== 0) {
                           <span class="cm-hard">{{ cm.hardScore }}h</span>
+                        }
+                        @if (cm.mediumScore !== 0) {
+                          <span class="cm-medium">{{ cm.mediumScore }}m</span>
                         }
                         @if (cm.softScore !== 0) {
                           <span class="cm-soft">{{ cm.softScore }}s</span>
@@ -237,11 +263,16 @@
               @if (solutionConstraints().length > 0) {
                 <ul class="constraint-list">
                   @for (cm of solutionConstraints(); track cm.constraintName) {
-                    <li [class.negative]="cm.hardScore < 0 || cm.softScore < 0">
+                    <li
+                      [class.negative]="cm.hardScore < 0 || cm.mediumScore < 0 || cm.softScore < 0"
+                    >
                       <span class="cm-name">{{ cm.constraintName }}</span>
                       <span class="cm-scores">
                         @if (cm.hardScore !== 0) {
                           <span class="cm-hard">{{ cm.hardScore }}h</span>
+                        }
+                        @if (cm.mediumScore !== 0) {
+                          <span class="cm-medium">{{ cm.mediumScore }}m</span>
                         }
                         @if (cm.softScore !== 0) {
                           <span class="cm-soft">{{ cm.softScore }}s</span>
@@ -272,7 +303,11 @@
             </mat-card-subtitle>
             <span class="detail-spacer"></span>
             @if (chatMessages().length > 0) {
-              <button mat-icon-button (click)="resetConversation()" matTooltip="Start a new conversation">
+              <button
+                mat-icon-button
+                (click)="resetConversation()"
+                matTooltip="Start a new conversation"
+              >
                 <mat-icon>restart_alt</mat-icon>
               </button>
             }
@@ -283,20 +318,32 @@
                 @if (selectedTalk(); as t) {
                   <button
                     mat-stroked-button
-                    (click)="askSuggested('Why was the talk \'' + t.title + '\' placed in this timeslot and not another one?')"
+                    (click)="
+                      askSuggested(
+                        'Why was the talk \'' +
+                          t.title +
+                          '\' placed in this timeslot and not another one?'
+                      )
+                    "
                   >
                     Why is “{{ t.title }}” here?
                   </button>
                 }
                 <button
                   mat-stroked-button
-                  (click)="askSuggested('Is this schedule feasible, and what are the main trade-offs the optimizer made?')"
+                  (click)="
+                    askSuggested(
+                      'Is this schedule feasible, and what are the main trade-offs the optimizer made?'
+                    )
+                  "
                 >
                   Is this schedule feasible?
                 </button>
                 <button
                   mat-stroked-button
-                  (click)="askSuggested('Which talks have the biggest constraint penalties and why?')"
+                  (click)="
+                    askSuggested('Which talks have the biggest constraint penalties and why?')
+                  "
                 >
                   Biggest penalties?
                 </button>
@@ -305,7 +352,11 @@
 
             <div class="chat-log">
               @for (msg of chatMessages(); track $index) {
-                <div class="chat-msg" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+                <div
+                  class="chat-msg"
+                  [class.user]="msg.role === 'user'"
+                  [class.assistant]="msg.role === 'assistant'"
+                >
                   <mat-icon class="chat-avatar">
                     {{ msg.role === 'user' ? 'person' : 'auto_awesome' }}
                   </mat-icon>

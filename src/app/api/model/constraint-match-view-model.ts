@@ -12,6 +12,7 @@
 export interface ConstraintMatchViewModel { 
     constraintName: string;
     hardScore: number;
+    mediumScore: number;
     softScore: number;
 }
 

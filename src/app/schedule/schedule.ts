@@ -26,7 +26,12 @@ import { SolutionEventsService } from '../shared/solution-events.service';
 
 interface GridCell {
   timeslot: TimeslotViewModel;
-  talk?: TalkViewModel;
+  /**
+   * Every talk assigned to this timeslot. Normally 0 or 1, but the solver may return an
+   * infeasible solution in which two talks share a slot (a hard `timeslotConflict`). Keeping a
+   * list means such a talk is shown as a conflict rather than silently disappearing.
+   */
+  talks: TalkViewModel[];
 }
 
 interface GridRow {
@@ -96,11 +101,18 @@ export class Schedule {
     if (!sol) return [];
     const rooms = this.rooms();
 
-    // Map talk by assigned timeslot id.
-    const talkByTimeslot = new Map<number, TalkViewModel>();
+    // Group talks by assigned timeslot id. A slot can legitimately hold more than one talk when
+    // the solution is infeasible, so collect them all instead of overwriting.
+    const talksByTimeslot = new Map<number, TalkViewModel[]>();
     for (const talk of sol.talks ?? []) {
-      if (talk.timeslot?.id != null) {
-        talkByTimeslot.set(talk.timeslot.id, talk);
+      const timeslotId = talk.timeslot?.id;
+      if (timeslotId != null) {
+        const existing = talksByTimeslot.get(timeslotId);
+        if (existing) {
+          existing.push(talk);
+        } else {
+          talksByTimeslot.set(timeslotId, [talk]);
+        }
       }
     }
 
@@ -115,7 +127,7 @@ export class Schedule {
       }
       const colIndex = rooms.indexOf(ts.room);
       if (colIndex >= 0) {
-        row.cells[colIndex] = { timeslot: ts, talk: talkByTimeslot.get(ts.id) };
+        row.cells[colIndex] = { timeslot: ts, talks: talksByTimeslot.get(ts.id) ?? [] };
       }
     }
 

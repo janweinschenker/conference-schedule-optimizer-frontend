@@ -11,6 +11,7 @@
 
 export interface ScoreViewModel { 
     hardScore: number;
+    mediumScore: number;
     softScore: number;
     feasible: boolean;
 }

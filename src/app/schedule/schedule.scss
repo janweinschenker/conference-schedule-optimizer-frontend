@@ -487,3 +487,17 @@
     white-space: nowrap;
   }
 }
+
+// Shown when the solver returned an infeasible solution that puts more than one talk in a slot.
+// Previously the extra talks were silently dropped from the grid entirely.
+.conflict-badge {
+  display: block;
+  margin-bottom: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #ffebee;
+  color: #b71c1c;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: center;
+}
