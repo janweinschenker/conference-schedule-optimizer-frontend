@@ -1,4 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, of, catchError, map, switchMap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -20,6 +22,7 @@ import {
   TimeslotViewModel,
   ConstraintMatchViewModel,
 } from '../api';
+import { SolutionEventsService } from '../shared/solution-events.service';
 
 interface GridCell {
   timeslot: TimeslotViewModel;
@@ -59,6 +62,10 @@ interface ChatMessage {
 export class Schedule {
   private readonly api = inject(PlanningsolutionApi);
   private readonly explainApi = inject(ExplainApi);
+  private readonly solutionEvents = inject(SolutionEventsService);
+
+  /** Refresh requests; the payload is whether the spinner should be shown. */
+  private readonly refreshRequests = new Subject<boolean>();
 
   readonly loading = signal(true);
   readonly notFound = signal(false);
@@ -132,27 +139,72 @@ export class Schedule {
   });
 
   constructor() {
+    // Refresh requests run through a single switchMap'd pipeline so an in-flight fetch is cancelled
+    // when a newer one starts. Without it, a slow earlier GET could resolve last and overwrite a
+    // newer solution with a stale one (initial load racing a live event, or two rapid events).
+    this.refreshRequests
+      .pipe(
+        switchMap((showSpinner) =>
+          this.api.getLatestPlanningSolution().pipe(
+            map((solution) => ({
+              showSpinner,
+              solution,
+              failure: null as HttpErrorResponse | null,
+            })),
+            catchError((failure: HttpErrorResponse) =>
+              of({ showSpinner, solution: null, failure }),
+            ),
+          ),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe(({ showSpinner, solution, failure }) =>
+        failure ? this.onFetchFailed(failure, showSpinner) : this.onFetchSucceeded(solution!),
+      );
+
     this.load();
+
+    // Live refresh: silently re-fetch the latest solution whenever the solver publishes a change.
+    this.solutionEvents.events$.pipe(takeUntilDestroyed()).subscribe(() => this.fetch(false));
   }
 
+  /** Public (re)load — shows the spinner while the initial/explicit fetch is in flight. */
   load(): void {
-    this.loading.set(true);
+    this.fetch(true);
+  }
+
+  /**
+   * Fetches the latest solution. When `showSpinner` is false the refresh is silent: `loading` is
+   * never flipped to true and a failure keeps the currently displayed schedule (no error, no
+   * blanking), so a live update never flashes a spinner or clears the screen mid-talk.
+   */
+  private fetch(showSpinner: boolean): void {
+    if (showSpinner) {
+      this.loading.set(true);
+      this.notFound.set(false);
+      this.error.set(null);
+    }
+    this.refreshRequests.next(showSpinner);
+  }
+
+  private onFetchSucceeded(solution: PlanningSolutionViewModel): void {
+    this.solution.set(solution);
     this.notFound.set(false);
     this.error.set(null);
-    this.api.getLatestPlanningSolution().subscribe({
-      next: (sol) => {
-        this.solution.set(sol);
-        this.loading.set(false);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        if (err.status === 404) {
-          this.notFound.set(true);
-        } else {
-          this.error.set('Failed to load the planning solution. Is the backend running?');
-        }
-      },
-    });
+    this.loading.set(false);
+  }
+
+  private onFetchFailed(failure: HttpErrorResponse, showSpinner: boolean): void {
+    if (!showSpinner) {
+      // Transient blip on a live refresh — keep whatever is on screen.
+      return;
+    }
+    this.loading.set(false);
+    if (failure.status === 404) {
+      this.notFound.set(true);
+    } else {
+      this.error.set('Failed to load the planning solution. Is the backend running?');
+    }
   }
 
   selectTalk(talk: TalkViewModel | undefined): void {
