@@ -45,8 +45,8 @@
             <span class="score-num">{{ sol.score?.hardScore ?? 0 }}</span>
             <span class="score-label">hard</span>
           </div>
-          <div class="score-item" [class.negative]="(sol.score?.mediumScore ?? 0) < 0">
-            <span class="score-num">{{ sol.score?.mediumScore ?? 0 }}</span>
+          <div class="score-item" [class.negative]="mediumScore(sol.score) < 0">
+            <span class="score-num">{{ mediumScore(sol.score) }}</span>
             <span class="score-label">medium</span>
           </div>
           <div class="score-item" [class.negative]="(sol.score?.softScore ?? 0) < 0">
@@ -216,8 +216,8 @@
                     <mat-chip [class.negative-chip]="sc.hardScore < 0">
                       hard {{ sc.hardScore }}
                     </mat-chip>
-                    <mat-chip [class.negative-chip]="sc.mediumScore < 0">
-                      medium {{ sc.mediumScore }}
+                    <mat-chip [class.negative-chip]="mediumScore(sc) < 0">
+                      medium {{ mediumScore(sc) }}
                     </mat-chip>
                     <mat-chip [class.negative-chip]="sc.softScore < 0">
                       soft {{ sc.softScore }}
@@ -231,15 +231,15 @@
                 <ul class="constraint-list">
                   @for (cm of talk.constraintMatches; track cm.constraintName) {
                     <li
-                      [class.negative]="cm.hardScore < 0 || cm.mediumScore < 0 || cm.softScore < 0"
+                      [class.negative]="cm.hardScore < 0 || mediumScore(cm) < 0 || cm.softScore < 0"
                     >
                       <span class="cm-name">{{ cm.constraintName }}</span>
                       <span class="cm-scores">
                         @if (cm.hardScore !== 0) {
                           <span class="cm-hard">{{ cm.hardScore }}h</span>
                         }
-                        @if (cm.mediumScore !== 0) {
-                          <span class="cm-medium">{{ cm.mediumScore }}m</span>
+                        @if (mediumScore(cm) !== 0) {
+                          <span class="cm-medium">{{ mediumScore(cm) }}m</span>
                         }
                         @if (cm.softScore !== 0) {
                           <span class="cm-soft">{{ cm.softScore }}s</span>
@@ -264,15 +264,15 @@
                 <ul class="constraint-list">
                   @for (cm of solutionConstraints(); track cm.constraintName) {
                     <li
-                      [class.negative]="cm.hardScore < 0 || cm.mediumScore < 0 || cm.softScore < 0"
+                      [class.negative]="cm.hardScore < 0 || mediumScore(cm) < 0 || cm.softScore < 0"
                     >
                       <span class="cm-name">{{ cm.constraintName }}</span>
                       <span class="cm-scores">
                         @if (cm.hardScore !== 0) {
                           <span class="cm-hard">{{ cm.hardScore }}h</span>
                         }
-                        @if (cm.mediumScore !== 0) {
-                          <span class="cm-medium">{{ cm.mediumScore }}m</span>
+                        @if (mediumScore(cm) !== 0) {
+                          <span class="cm-medium">{{ mediumScore(cm) }}m</span>
                         }
                         @if (cm.softScore !== 0) {
                           <span class="cm-soft">{{ cm.softScore }}s</span>

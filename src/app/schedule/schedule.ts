@@ -283,14 +283,37 @@ export class Schedule {
   }
 
   isPinned(talk: TalkViewModel | undefined): boolean {
-    return !!talk && (talk.timePreset != null || talk.roomPreset != null);
+    return !!talk && (this.timePreset(talk) != null || this.roomPreset(talk) != null);
   }
 
   /** Describes what a talk was pinned to, e.g. "Pinned to 09:00 · Room 1". */
   pinTooltip(talk: TalkViewModel | undefined): string {
     if (!this.isPinned(talk)) return '';
-    const parts = [talk!.timePreset, talk!.roomPreset].filter((p) => p != null);
+    const parts = [this.timePreset(talk), this.roomPreset(talk)].filter((p) => p != null);
     return `Pinned to ${parts.join(' · ')}`;
+  }
+
+  mediumScore(value: unknown): number {
+    if (!value || typeof value !== 'object') return 0;
+    const raw = (value as Record<string, unknown>)['mediumScore'];
+    return typeof raw === 'number' ? raw : 0;
+  }
+
+  private timePreset(talk: TalkViewModel | undefined): string | null {
+    return this.optionalStringField(talk, 'timePreset');
+  }
+
+  private roomPreset(talk: TalkViewModel | undefined): string | null {
+    return this.optionalStringField(talk, 'roomPreset');
+  }
+
+  private optionalStringField(
+    value: unknown,
+    field: 'timePreset' | 'roomPreset',
+  ): string | null {
+    if (!value || typeof value !== 'object') return null;
+    const raw = (value as Record<string, unknown>)[field];
+    return typeof raw === 'string' && raw.length > 0 ? raw : null;
   }
 
   formatDuration(min: number | undefined): string {
